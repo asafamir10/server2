@@ -10,18 +10,10 @@ exports.login = function (req, res, next) {
     //verify user.then we can just create a token
     //and send it back for the client to consume
 
-    // Create a token generator with the default settings:
-    var randtoken = require('rand-token');
-
-    // Generate a 16 character alpha-numeric token:
-    var lastToken = randtoken.generate(16);
     //update user token
-    User.findOne({_id: req.user._id}).populate("coupons.coupon")
-    .then(function (user) {
-        user.lastToken = lastToken;
+    User.findOne({_id: req.user._id}).
+    then(function (user) {
         user.modified = new Date();
-        user.counterTryLogin=0;
-        user.lastDateLogin=new Date();
 
         user.save(function (err) {
             if(err) {

@@ -8,7 +8,7 @@ var checkUser = [auth.decodeToken(), auth.getFreshUser()];
 
 var checkCurrentEditorUser = [auth.decodeToken(), auth.getCurrentEditorUser()];
 
-router.get('/getAll',checkCurrentEditorUser, controller.getAll);
+router.post('/getAll',checkCurrentEditorUser, controller.getAll);
 router.post('/update',controller.isUniqEmail,checkCurrentEditorUser,controller.update);
 router.post('/delete',checkCurrentEditorUser,controller.delete);
 router.post('/add',checkCurrentEditorUser ,controller.add);

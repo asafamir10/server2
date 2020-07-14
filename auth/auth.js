@@ -4,7 +4,7 @@
 var jwt = require('jsonwebtoken');
 var expressJwt = require('express-jwt');
 var config = require('../config/config');
-var checkToken = expressJwt({secret : config.secrets.jwt, algorithms: ['RS256'] });
+var checkToken = expressJwt({secret : config.secrets.jwt,algorithms: ['HS256']  });
 var User = require('../api/user/userModel');
 exports.decodeToken = function () {
     return function (req, res, next) {
@@ -24,7 +24,7 @@ exports.decodeToken = function () {
 exports.getCurrentEditorUser = function () {
 
     return function (req, res, next) {
-        User.findById(req.body._id).populate("coupons.coupon")
+        User.findById(req.body._id)
             .then(function (user) {
                 if(!user){
                     //if no user is found.it was
@@ -46,7 +46,6 @@ exports.verifyUser = function () {
     return function (req, res, next) {
         var email = req.body.email;
         var password = req.body.password;
-        var lastToken = req.body.lastToekn;
         //if no username pr password then stop
         if(!email || !password){
             //res.status(400).send('you need a username and password');
@@ -64,39 +63,12 @@ exports.verifyUser = function () {
                     res.json({statusCode:401,error:'אין משתמש עם הפרטים הנל'});
                 }
                 else {
-
-                    //user exist - check for limitation
-                    var DELTA = 4;
-                    var COUNTER = 4;
-                    var now = new Date();
-                    var diffMs = (now - user["lastDateLogin"]); // milliseconds between now & Christmas
-                    //var diffDays = Math.floor(diffMs / 86400000); // days
-                    var diffHrs = Math.floor((diffMs % 86400000) / 3600000); // hours
-                    var diffMins = Math.round(((diffMs % 86400000) % 3600000) / 60000); // minutes
-                    user["counterTryLogin"]=user["counterTryLogin"]+1;
-                    var counterTryLogin = user["counterTryLogin"];
-                    user["lastDateLogin"]=new Date();
-                    console.log("A" + diffMins + " : " + DELTA);
-
-                    if(diffMins >= DELTA ){//pass minutes from last try
-                        user["counterTryLogin"]=0;
-
-                        console.log("*********9" + password);
-
                         user.save(function (err) {
-                            console.log("*********10" + password);
-
                             if(!user.authenticate(password) ){
                                 console.log("*********4" + password);
-
-                                var stay =  COUNTER - user["counterTryLogin"] -1 ;
-                                var error = "יוסר וסיסמא לא מתאימים  " + " נשארו לך "  + " " + stay + " ניסיונות";
-                            res.json({statusCode:401,
+                                var error = "יוסר וסיסמא לא מתאימים  " + " נשארו לך "  + " "  + " ניסיונות";
+                                res.json({statusCode:401,
                                     error:error,
-                                    diffMins:diffMins,
-                                    counterTryLogin:user["counterTryLogin"],
-                                    delta:DELTA,
-                                    counter:COUNTER
                                 });
                                 return;
                             }
@@ -111,56 +83,6 @@ exports.verifyUser = function () {
                             }
                         });
                     }
-                    else if(diffMins < DELTA ) {
-                        console.log("*********11" + password);
-
-                        user.save(function (err) {
-                            console.log("*********12" + password);
-
-                            if(diffMins < DELTA && counterTryLogin >= COUNTER){
-                                console.log("*********6" + password);
-
-                                var error = "נסה שנית עוד "  + (DELTA+1)  + " דקות";
-                                res.json({statusCode:429,error:error,
-                                diffMins:diffMins,
-                                counterTryLogin:user["counterTryLogin"],
-                                delta:DELTA,
-                                counter:COUNTER
-                            });
-                                return;
-                            }
-                            else {
-                                console.log("*********90" + password);
-
-                                if(!user.authenticate(password) ){
-                                    var stay =  COUNTER - user["counterTryLogin"] -1 ;
-                                    console.log("*********7" + password);
-
-                                    var error = "יוסר וסיסמא לא מתאימים  " + " נשארו לך "  + " " + stay + " ניסיונות";
-                                    res.json({statusCode:401,error:error,
-                                    diffMins:diffMins,
-                                    counterTryLogin:user["counterTryLogin"],
-                                    delta:DELTA,
-                                    counter:COUNTER
-                                    });
-                                    return;
-                                }
-                                else {
-                                    //if everything is good
-                                    //then atatch to req.user
-                                    //and call next so the controller
-                                    // can sign a token from the req.user._id
-                                    console.log("*********8" + password);
-
-                                    req.user = user;
-                                    next();
-                                }
-                            }
-                        });
-                    }
-                    console.log("B");
-                    //checking the password here
-                }
             },function (err) {
                     next(err);
             });
